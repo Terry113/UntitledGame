@@ -3,14 +3,25 @@ package com.github.Terry113;
 import java.awt.Color;
 import java.awt.Graphics;
 
-
+/**
+ * Base class for all units in the simulation.
+ */
 public abstract class Unit {
     private float x, y; // Position
     private float vx, vy; // Velocity
     private float angle; // Orientation angle in radians
     private Color color;
-    private int updateCounter = 0;
 
+    /**
+     * Creates a new unit.
+     * 
+     * @param x Initial X position
+     * @param y Initial Y position
+     * @param vx Initial X velocity
+     * @param vy Initial Y velocity
+     * @param angle Initial angle in radians
+     * @param color Color of the unit
+     */
     public Unit(float x, float y, float vx, float vy, float angle, Color color) {
         this.x = x;
         this.y = y;
@@ -20,6 +31,52 @@ public abstract class Unit {
         this.color = color;
     }
 
+    /**
+     * Updates the unit's state for the current frame.
+     */
+    public abstract void update();
+
+    /**
+     * Renders the unit to the screen.
+     * 
+     * @param g The graphics context to render to
+     */
+    public abstract void render(Graphics g);
+
+    /**
+     * Applies a steering force toward a target position.
+     * 
+     * @param xTarget X coordinate of the target
+     * @param yTarget Y coordinate of the target
+     */
+    public void steer(float xTarget, float yTarget) {
+        double distanceSquared = Util.getDistanceSquared(xTarget, yTarget, x, y);
+        
+        // Only steer if not too close to target
+        if (distanceSquared > 25) {
+            // Calculate desired velocity (normalized direction to target)
+            float dx = xTarget - x;
+            float dy = yTarget - y;
+            float distance = (float) Math.sqrt(distanceSquared);
+            
+            // Normalize
+            dx /= distance;
+            dy /= distance;
+            
+            // Calculate steering force (desired velocity - current velocity)
+            float steerX = dx - vx;
+            float steerY = dy - vy;
+            
+            // Apply the steering force with damping
+            vx += steerX * Constants.STEERING_DAMPING;
+            vy += steerY * Constants.STEERING_DAMPING;
+            
+            // Update the angle
+            angle = (float) Math.atan2(vy, vx);
+        }
+    }
+
+    // Getters and setters
     public float getX() {
         return x;
     }
@@ -63,25 +120,4 @@ public abstract class Unit {
     public void setAngle(float angle) {
         this.angle = angle;
     }
-
-    public abstract void update();
-
-    public abstract void render(Graphics g);
-
-    public void steer(float xTarget, float yTarget) {
-        double distanceSquared = Util.getDistanceSquared(xTarget, yTarget, x, y);
-        if (distanceSquared > Constants.DETECTION_RADIUS) { // Only steer if the target is not too close
-            float steerX = (xTarget - x) / (float) Math.sqrt(distanceSquared) - vx;
-            float steerY = (yTarget - y) / (float) Math.sqrt(distanceSquared) - vy;
-
-            // Apply a damping factor to the steering force
-            float damping = 0.1f; // Adjust this value as needed
-            vx += steerX * damping;
-            vy += steerY * damping;
-
-            // Update the angle
-            angle = (float) Math.atan2(vy, vx);
-        }
-    }
-
 }
